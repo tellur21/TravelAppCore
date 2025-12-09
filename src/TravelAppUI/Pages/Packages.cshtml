@@ -1,0 +1,120 @@
+@page
+@model TravelAppUI.Pages.PackagesModel
+@{
+    ViewData["Title"] = "Travel Packages";
+}
+
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="display-5 fw-bold text-center mb-5">Travel Packages</h1>
+            <p class="lead text-center text-muted mb-5">Discover our carefully curated travel experiences in SilkRoad</p>
+        </div>
+    </div>
+
+    @if (Model.TravelPackages?.Items?.Any() == true)
+    {
+        <div class="row">
+            @foreach (var package in Model.TravelPackages.Items)
+            {
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        @if (!string.IsNullOrEmpty(package.ImageUrl))
+                        {
+                            <img src="@package.ImageUrl" class="card-img-top" alt="@package.Name" style="height: 200px; object-fit: cover;">
+                        }
+                        else
+                        {
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <i class="fas fa-image fa-3x text-muted"></i>
+                            </div>
+                        }
+                        
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">@package.Name</h5>
+                            <p class="card-text text-muted">
+                                <i class="fas fa-map-marker-alt me-2"></i>@package.Destination
+                            </p>
+                            <p class="card-text">@package.Description</p>
+                            
+                            <div class="mt-auto">
+                                <div class="row mb-3">
+                                    <div class="col-6">
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            @package.StartDate.ToString("MMM dd") - @package.EndDate.ToString("MMM dd, yyyy")
+                                        </small>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>
+                                            @package.Duration days
+                                        </small>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-6">
+                                        <small class="text-muted">
+                                            <i class="fas fa-users me-1"></i>
+                                            @package.AvailableSlots / @package.MaxCapacity available
+                                        </small>
+                                    </div>
+                                    <div class="col-6">
+                                        <span class="badge bg-@(package.Status.ToLower() == "active" ? "success" : "secondary")">
+                                            @package.Status
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h4 class="text-primary mb-0">@package.Price.ToString("C")</h4>
+                                    <a asp-page="/PackageDetails" asp-route-id="@package.Id" class="btn btn-primary">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (Model.TravelPackages.TotalPages > 1)
+        {
+            <nav aria-label="Package pagination" class="mt-5">
+                <ul class="pagination justify-content-center">
+                    @if (Model.TravelPackages.HasPreviousPage)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" asp-page="/Packages" asp-route-page="@(Model.TravelPackages.Page - 1)">Previous</a>
+                        </li>
+                    }
+                    
+                    @for (int i = Math.Max(1, Model.TravelPackages.Page - 2); i <= Math.Min(Model.TravelPackages.TotalPages, Model.TravelPackages.Page + 2); i++)
+                    {
+                        <li class="page-item @(i == Model.TravelPackages.Page ? "active" : "")">
+                            <a class="page-link" asp-page="/Packages" asp-route-page="@i">@i</a>
+                        </li>
+                    }
+                    
+                    @if (Model.TravelPackages.HasNextPage)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" asp-page="/Packages" asp-route-page="@(Model.TravelPackages.Page + 1)">Next</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+            <h3 class="text-muted">No packages found</h3>
+            <p class="text-muted">We're working on adding more amazing travel packages. Please check back soon!</p>
+        </div>
+    }
+</div>
+

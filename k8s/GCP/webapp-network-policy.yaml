@@ -1,0 +1,51 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: webapp-network-policy
+  namespace: webapp
+spec:
+  podSelector:
+    matchLabels:
+      app: webapp
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow health checks and traffic from the GKE Ingress controller and Google Cloud Load Balancer.
+    # These IP ranges are required for the external load balancer's health checks to reach the pods.
+    - from:
+        - ipBlock:
+            cidr: 130.211.0.0/22
+        - ipBlock:
+            cidr: 35.191.0.0/16
+      ports:
+        - protocol: TCP
+          port: 80
+    # Allow external ingress (for LoadBalancer/Ingress)
+    - from: []
+      ports:
+        - protocol: TCP
+          port: 80
+  egress:
+    # Allow to MSSQL namespace
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: mssql
+      ports:
+        - protocol: TCP
+          port: 1433
+    # Allow external HTTP/HTTPS
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    # Allow DNS
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53

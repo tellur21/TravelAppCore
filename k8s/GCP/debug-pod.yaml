@@ -1,0 +1,12 @@
+# Create test pod yaml
+# filepath: c:\Git\BukharaTravelCore\src\k8s\GCP2\debug-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: debug-tools
+  namespace: webapp
+spec:
+  containers:
+  - name: debug
+    image: mcr.microsoft.com/mssql-tools
+    command: ['sleep', '3600']

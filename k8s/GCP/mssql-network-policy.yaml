@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mssql-network-policy
+  namespace: mssql
+spec:
+  podSelector:
+    matchLabels:
+      app: mssql
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow from webapp namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: webapp
+      ports:
+        - protocol: TCP
+          port: 1433
+    # Allow external access (for SSMS) - restrict by IP if needed
+    - from: []
+      ports:
+        - protocol: TCP
+          port: 1433

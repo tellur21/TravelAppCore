@@ -1,0 +1,57 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home";
+}
+
+<script src="https://js.stripe.com/v3/"></script>
+
+<div class="hero-section bg-primary text-white py-5 mb-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold">Discover SilkRoad</h1>
+                <p class="lead">Experience the ancient Silk Road city with our carefully curated travel packages. From historic monuments to cultural experiences, discover the magic of SilkRoad.</p>
+                <a class="btn btn-light btn-lg" asp-page="/Packages">Explore Packages</a>
+            </div>
+            <div class="col-lg-6">
+                <div class="text-center">
+                    <i class="fas fa-mosque fa-10x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-map-marked-alt fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Historic Sites</h5>
+                    <p class="card-text">Visit UNESCO World Heritage sites including the Po-i-Kalyan complex, Ark Fortress, and ancient madrasas.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-utensils fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Local Cuisine</h5>
+                    <p class="card-text">Taste authentic Uzbek dishes and learn about the rich culinary traditions of the Silk Road.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Cultural Experiences</h5>
+                    <p class="card-text">Meet local artisans, attend traditional performances, and immerse yourself in SilkRoad's living culture.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

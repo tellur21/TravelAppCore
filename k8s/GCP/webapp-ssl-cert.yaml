@@ -1,0 +1,10 @@
+apiVersion: networking.gke.io/v1
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: bukhara-travel-ssl
+  namespace: webapp
+spec:
+  domains:
+    - example.com
+    - www.example.com

@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp-deployment
+  namespace: webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      initContainers:
+          - name: db-init
+            image: mcr.microsoft.com/mssql-tools:latest
+            envFrom:
+              - configMapRef:
+                  name: webapp-config
+              - secretRef:
+                  name: webapp-secret
+            # Same env vars and secrets as main container
+            imagePullPolicy: Always
+            command: ["sh", "-c"]
+            args:
+              - |
+                set -e
+                echo "Waiting for SQL Server at ${DATABASE_SERVER}:${DATABASE_PORT}..."
+                
+                # Wait longer with more retries
+                MAX_RETRIES=60
+                RETRY_COUNT=0
+                
+                while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+                  if /opt/mssql-tools/bin/sqlcmd -S "${DATABASE_SERVER},${DATABASE_PORT}" -U sa -P "${SA_PASSWORD}" -Q "SELECT 1" -d master >/dev/null 2>&1; then
+                    echo "SQL Server is ready!"
+                    break
+                  fi
+                  echo "Retry $((RETRY_COUNT + 1))/$MAX_RETRIES - SQL Server not ready yet..."
+                  RETRY_COUNT=$((RETRY_COUNT + 1))
+                  sleep 10
+                done
+                
+                if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+                  echo "ERROR: Could not connect to SQL Server after $MAX_RETRIES attempts"
+                  exit 1
+                fi
+                
+                echo "Creating database if not exists..."
+                /opt/mssql-tools/bin/sqlcmd -S "${DATABASE_SERVER},${DATABASE_PORT}" -U sa -P "${SA_PASSWORD}" -Q "IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'${DATABASE_NAME}') CREATE DATABASE [${DATABASE_NAME}];" || {
+                  echo "Failed to create database"
+                  exit 1
+                }
+                
+                echo "Creating application user..."
+                cat > /tmp/init.sql <<'SQL'
+                USE [BukharaTravel];
+                
+                IF NOT EXISTS (SELECT * FROM sys.sql_logins WHERE name = 'APP_USER_PLACEHOLDER')
+                  CREATE LOGIN APP_USER_PLACEHOLDER WITH PASSWORD = 'APP_PASS_PLACEHOLDER';
+                  
+                IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = 'APP_USER_PLACEHOLDER')
+                  CREATE USER APP_USER_PLACEHOLDER FOR LOGIN APP_USER_PLACEHOLDER;
+                  
+                EXEC sp_addrolemember 'db_owner', APP_USER_PLACEHOLDER;
+                SQL
+                
+                # Replace placeholders safely
+                sed -i "s/APP_USER_PLACEHOLDER/${DATABASE_USER}/g" /tmp/init.sql
+                sed -i "s/APP_PASS_PLACEHOLDER/${DATABASE_PASSWORD}/g" /tmp/init.sql
+                
+                /opt/mssql-tools/bin/sqlcmd -S "${DATABASE_SERVER},${DATABASE_PORT}" -U sa -P "${SA_PASSWORD}" -i /tmp/init.sql || {
+                  echo "Database user creation failed, but continuing..."
+                }
+                
+                echo "Database initialization completed successfully!"
+          - name: migrate
+            image: europe-west6-docker.pkg.dev/propane-zephyr-468706-n7/bukhara-travel/api:latest
+            command: ["dotnet", "Api.dll", "--migrate-only"]
+            envFrom:
+            - configMapRef:
+                name: webapp-config
+            - secretRef:
+                name: webapp-secret
+            imagePullPolicy: Always
+      containers:
+        - name: webapp
+          image: europe-west6-docker.pkg.dev/propane-zephyr-468706-n7/bukhara-travel/api:latest
+          envFrom:
+            - configMapRef:
+                name: webapp-config
+            - secretRef:
+                name: webapp-secret
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "250m"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3

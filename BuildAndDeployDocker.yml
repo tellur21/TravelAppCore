@@ -1,0 +1,140 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  name: Default - Ubuntu # Self-hosted Ubuntu agent pool name
+
+variables:
+  PROJECT_ID: "YOUR_PROJECT_ID"
+  CLUSTER_NAME: "YOUR_CLUSTER_NAME"
+  ZONE: "europe-west6-a"
+  REGION: "europe-west6"
+  APP_NAME: "api"
+  REPOSITORY_NAME: "YOUR_REPOSITORY_NAME"  
+  WEBAPP_NAMESPACE: "webapp"
+  MSSQL_NAMESPACE: "mssql"
+
+stages:
+  - stage: BuildAndPush
+    jobs:
+      - job: Build
+        pool:
+          name: Default - Ubuntu
+        steps:
+          - script: |
+              #!/usr/bin/env bash
+              set -e
+
+              # Helpers
+              command_exists() { command -v "$1" >/dev/null 2>&1; }
+
+              for cmd in docker kubectl gcloud jq; do
+                if ! command_exists "$cmd"; then
+                  echo "Error: required tool '$cmd' is not installed or not in PATH." >&2
+                  exit 1
+                fi
+              done
+
+              echo "=== Building and Deploying SilkRoad Travel API ==="
+
+              echo "Authenticating to GCP..."
+              echo "$(GCP_SA_KEY)" | base64 --decode > gcp-key.json
+        
+              ls -l gcp-key.json
+              head -n 5 gcp-key.json
+
+              echo "Activating service account..."
+              gcloud auth activate-service-account --key-file=gcp-key.json
+
+              echo "Setting GCP project: ${PROJECT_ID}"
+              gcloud config set project "${PROJECT_ID}"
+
+              echo "Configuring Docker authentication for Artifact Registry (${REGION}-docker.pkg.dev)..."
+              gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+
+              IMAGE_BASE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY_NAME}/${APP_NAME}:latest"
+              
+              echo "Building Docker image: ${IMAGE_BASE}"
+              docker build -f $(System.DefaultWorkingDirectory)/src/Api/Dockerfile -t "${IMAGE_BASE}" $(System.DefaultWorkingDirectory)/src
+
+              echo "Pushing images to Artifact Registry..."
+              docker push "${IMAGE_BASE}"
+
+              echo "Fetching GKE credentials for cluster ${CLUSTER_NAME} (zone: ${ZONE})"
+              gcloud container clusters get-credentials "${CLUSTER_NAME}" --zone="${ZONE}" --project="${PROJECT_ID}"
+
+              echo "Applying namespaces and secrest manifests ..."
+              kubectl apply -f $(System.DefaultWorkingDirectory)/k8s/GCP/mssql-namespace.yaml
+              kubectl apply -f $(System.DefaultWorkingDirectory)/k8s/GCP/webapp-namespace.yaml
+              kubectl apply -f $(System.DefaultWorkingDirectory)/k8s/GCP/webapp-config.yaml
+              kubectl apply -f $(System.DefaultWorkingDirectory)/k8s/GCP/mssql-secret.yaml
+              kubectl apply -f $(System.DefaultWorkingDirectory)/k8s/GCP/webapp-secret.yaml 
+              
+              echo "Applying storage configmap manifests ..."
+              kubectl apply -f $(System.DefaultWorkingDirectory)/k8s/GCP/mssql-data-pvc.yaml
+              kubectl apply -f $(System.DefaultWorkingDirectory)/k8s/GCP/mssql-config.yaml
+
+              echo "Applying deployment of mssql maniffests ..."
+              kubectl apply -f $(System.DefaultWorkingDirectory)/k8s/GCP/mssql-deployment.yaml
+              kubectl apply -f $(System.DefaultWorkingDirectory)/k8s/GCP/mssql-service.yaml
+
+              echo 'Waiting for MSSQL to be ready...'
+              kubectl wait --for=condition=ready pod -l app=mssql -n mssql --timeout=300s
+
+              echo "Applying netwokrn policy manifests ..."
+              kubectl apply -f $(System.DefaultWorkingDirectory)/k8s/GCP/mssql-network-policy.yaml
+
+              # echo "Applying webapp deployment manifests ..."
+              kubectl apply -f $(System.DefaultWorkingDirectory)/k8s/GCP/webapp-deployment.yaml
+              kubectl apply -f $(System.DefaultWorkingDirectory)/k8s/GCP/webapp-service.yaml
+              kubectl apply -f $(System.DefaultWorkingDirectory)/k8s/GCP/webapp-ssl-cert.yaml
+              kubectl apply -f $(System.DefaultWorkingDirectory)/k8s/GCP/webapp-ingress.yaml
+              
+              echo "Updating webapp deployment image to ${IMAGE_BASE} (namespace: ${WEBAPP_NAMESPACE})..."
+              kubectl set image deployment/webapp-deployment webapp="${IMAGE_BASE}" -n "${WEBAPP_NAMESPACE}" --record
+
+              echo "Waiting for webapp rollout..."
+              kubectl rollout status deployment/webapp-deployment -n "${WEBAPP_NAMESPACE}" --timeout=600s
+
+              echo "=== Deployment Complete ==="
+              echo "Image: ${IMAGE_BASE}"
+
+              echo
+              echo "=== Services ==="
+              echo "MSSQL Services:"
+              kubectl get services -n "${MSSQL_NAMESPACE}"
+              echo
+              echo "WebApp Services:"
+              kubectl get services -n "${WEBAPP_NAMESPACE}"
+
+              echo
+              echo "=== Pods ==="
+              echo "MSSQL Pods:"
+              kubectl get pods -n "${MSSQL_NAMESPACE}"
+              echo
+              echo "WebApp Pods:"
+              kubectl get pods -n "${WEBAPP_NAMESPACE}"
+
+              echo
+              echo "=== Ingress ==="
+              kubectl get ingress -n "${WEBAPP_NAMESPACE}" || true
+
+              EXTERNAL_IP=$(kubectl get ingress webapp-ingress -n "${WEBAPP_NAMESPACE}" -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
+
+              if [[ -z "${EXTERNAL_IP}" ]]; then
+                echo "External IP: Pending..."
+              else
+                echo "External IP: ${EXTERNAL_IP}"
+                echo "Your application should be accessible at: http://${EXTERNAL_IP}"
+              fi
+
+              echo
+              echo "Useful commands:"
+              echo "  kubectl logs -f deployment/webapp-deployment -n ${WEBAPP_NAMESPACE}"
+              echo "  kubectl logs -f deployment/mssql-deployment -n ${MSSQL_NAMESPACE}"
+              echo "  kubectl rollout restart deployment/webapp-deployment -n ${WEBAPP_NAMESPACE}"
+              echo "  kubectl scale deployment webapp-deployment --replicas=2"
+            displayName: "Build and Push to GCR"
+
