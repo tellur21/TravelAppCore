@@ -4,8 +4,8 @@ metadata:
   name: webapp-config
   namespace: webapp
 data:  
-  DATABASE_SERVER: "mssql-service.mssql.svc.cluster.local"
+  DATABASE_SERVER: "server address"
   DATABASE_PORT: "1433"
-  DATABASE_NAME: "BukharaTravel"
+  DATABASE_NAME: "dbName"
   ASPNETCORE_ENVIRONMENT: "Production"
   ASPNETCORE_URLS: "http://+:8080"

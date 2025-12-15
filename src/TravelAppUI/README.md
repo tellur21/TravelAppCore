@@ -1,6 +1,6 @@
-# SilkRoad Travel UI
+# Travel UI
 
-A modern ASP.NET Core Razor Pages application that consumes the SilkRoad Travel API to provide a beautiful user interface for browsing and booking travel packages.
+A modern ASP.NET Core Razor Pages application that consumes the Travel API to provide a beautiful user interface for browsing and booking travel packages.
 
 ## Features
 
@@ -54,7 +54,7 @@ TravelAppUI/
 
 - .NET 9.0 SDK or later
 - Visual Studio 2022 or VS Code
-- Access to the SilkRoad Travel API (https://www.SilkRoad.travel)
+- Access to the Travel API (https://www..travel)
 
 ### Configuration
 
@@ -64,7 +64,7 @@ TravelAppUI/
    ```json
    {
      "ApiSettings": {
-       "BaseUrl": "https://www.SilkRoad.travel"
+       "BaseUrl": "https://www..travel"
      }
    }
    ```
@@ -207,5 +207,5 @@ The application uses the built-in .NET logging framework. Logs are written to th
 
 ## License
 
-This project is part of the SilkRoad Travel Core solution.
+This project is part of the Travel Core solution.
 

@@ -102,7 +102,7 @@ try
     // MediatR
     builder.Services.AddMediatR(cfg =>
     {
-        cfg.LicenseKey = "eyJhbGciOiJSUzI1NiIsImtpZCI6Ikx1Y2t5UGVubnlTb2Z0d2FyZUxpY2Vuc2VLZXkvYmJiMTNhY2I1OTkwNGQ4OWI0Y2IxYzg1ZjA4OGNjZjkiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2x1Y2t5cGVubnlzb2Z0d2FyZS5jb20iLCJhdWQiOiJMdWNreVBlbm55U29mdHdhcmUiLCJleHAiOiIxNzkwMzgwODAwIiwiaWF0IjoiMTc1ODg4MDA0MCIsImFjY291bnRfaWQiOiIwMTk5ODU2YjI1Yjk3NGU4YTIzZTEzZWU2ZmEwZTZjNCIsImN1c3RvbWVyX2lkIjoiY3RtXzAxazYycHExY3pqZWs2MDAydDB5OWN4emZlIiwic3ViX2lkIjoiLSIsImVkaXRpb24iOiIwIiwidHlwZSI6IjIifQ.CH7iffYdvnt1nNLjRX0sjEBEorykos5F8rz3w-EVD_Kt2x8G4RKlfGXKJM45eYJsaxHpxi0Kr2WxKvX6TRsc181E4wYtSZ3Ryl0sLk29bj-4d5caR1co1y_8ZfG1e-v8B6Dh2FfzAXtsSTQ2qxnOY1z-410_XheEZfZadhmBYBPKXYGAur23PW_V3bw8QrejGcRzMhnag8r8_ZvcOiyC_Me8wX229l0NspjRnvZzDxXUvVuuCGbXQrBhV_eBgKUY37ob51WEv7wdERBIYKX6elFsEHpf9uLjjDK2m8EAqHVC2I4GjcQUocpcPPBDLQDIM0Syn9xnYkO-mUo1sKGOYw";
+        cfg.LicenseKey = "license-key"; // Replace with your actual license key if applicable
         cfg.RegisterServicesFromAssembly(Assembly.Load("Application"));
     });
 
@@ -122,7 +122,7 @@ try
     // Swagger
     builder.Services.AddSwaggerGen(c =>
     {
-        c.SwaggerDoc("v1", new OpenApiInfo { Title = "SilkRoad Travel API", Version = "v1" });
+        c.SwaggerDoc("v1", new OpenApiInfo { Title = "Travel API", Version = "v1" });
         c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
         {
             Description = "JWT Authorization header using the Bearer scheme",
@@ -208,7 +208,7 @@ try
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "SilkRoad Travel API v1");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Travel API v1");
     });
 
     app.MapControllers();
@@ -232,8 +232,8 @@ try
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 
-        string adminEmail = configuration["InitialAdmin:Email"] ?? "admin@SilkRoad.travel";
-        string adminPassword = configuration["InitialAdmin:Password"] ?? "AdminP@ssw0rd1";
+        string adminEmail = configuration["InitialAdmin:Email"] ?? "dummyUser";
+        string adminPassword = configuration["InitialAdmin:Password"] ?? "dummyAdminPassword1!";
 
         if (await userManager.FindByEmailAsync(adminEmail) == null)
         {

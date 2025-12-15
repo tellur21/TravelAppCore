@@ -2,19 +2,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: bukhara-travel-api-deployment
-  namespace: bukhara-travel
+  name: service-api-deployment
+  namespace: service
   labels:
-    app: bukhara-travel-api
+    app: service-api
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: bukhara-travel-api
+      app: service-api
   template:
     metadata:
       labels:
-        app: bukhara-travel-api
+        app: service-api
     spec:
       initContainers:
         - name: db-init
@@ -22,31 +22,31 @@ spec:
           imagePullPolicy: IfNotPresent
           env:
             - name: MSSQL_SA_PASSWORD
-              value: M@sterH!de
+              value: password
           command: ['sh', '-c']
           args:
             - |
               echo "Waiting for SQL Server to become available..."
-              until /opt/mssql-tools/bin/sqlcmd -S mssql-service.bukhara-travel.svc.cluster.local -U sa -P "$MSSQL_SA_PASSWORD" -Q "SELECT 1" -d master; do
+              until /opt/mssql-tools/bin/sqlcmd -S mssql-service.service.svc.cluster.local -U sa -P "$MSSQL_SA_PASSWORD" -Q "SELECT 1" -d master; do
                 echo "Retrying in 5 seconds..."
                 sleep 5
               done
 
-              echo "Creating database BukharaTravel if not exists..."
-              /opt/mssql-tools/bin/sqlcmd -S mssql-service.bukhara-travel.svc.cluster.local -U sa -P "$MSSQL_SA_PASSWORD" -Q "IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'BukharaTravel') CREATE DATABASE BukharaTravel;"
+              echo "Creating database dbName if not exists..."
+              /opt/mssql-tools/bin/sqlcmd -S mssql-service.service.svc.cluster.local -U sa -P "$MSSQL_SA_PASSWORD" -Q "IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'dbName') CREATE DATABASE dbName;"
 
-              echo "Creating login and user pear..."
-              /opt/mssql-tools/bin/sqlcmd -S mssql-service.bukhara-travel.svc.cluster.local -U sa -P "$MSSQL_SA_PASSWORD" -Q "
-                USE [BukharaTravel];
-                IF NOT EXISTS (SELECT * FROM sys.sql_logins WHERE name = 'pear')
-                  CREATE LOGIN pear WITH PASSWORD = 'M@sterH!de';
-                IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = 'pear')
-                  CREATE USER pear FOR LOGIN pear;
-                EXEC sp_addrolemember 'db_owner', pear;
+              echo "Creating login and user sa..."
+              /opt/mssql-tools/bin/sqlcmd -S mssql-service.service.svc.cluster.local -U sa -P "$MSSQL_SA_PASSWORD" -Q "
+                USE [dbName];
+                IF NOT EXISTS (SELECT * FROM sys.sql_logins WHERE name = 'sa')
+                  CREATE LOGIN sa WITH PASSWORD = 'password';
+                IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = 'sa')
+                  CREATE USER sa FOR LOGIN sa;
+                EXEC sp_addrolemember 'db_owner', sa;
               " || echo "Database setup completed (some commands may have already run)."
       containers:
-        - name: bukhara-travel-api
-          image: bukhara-travel-api:latest
+        - name: service-api
+          image: service-api:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -54,19 +54,19 @@ spec:
             - name: ASPNETCORE_URLS
               value: "http://+:8080"
             - name: ConnectionStrings__DefaultConnection
-              value: "Server=mssql-service.bukhara-travel.svc.cluster.local,1433;Database=BukharaTravel;User Id=pear;Password=M@sterH!de;TrustServerCertificate=True;"
+              value: "Server=mssql-service.service.svc.cluster.local,1433;Database=dbName;User Id=sa;Password=password;TrustServerCertificate=True;"
       restartPolicy: Always
 ---
 # Service exposing the API
 apiVersion: v1
 kind: Service
 metadata:
-  name: bukhara-travel-api-service
-  namespace: bukhara-travel
+  name: service-api-service
+  namespace: service
 spec:
   type: NodePort
   selector:
-    app: bukhara-travel-api
+    app: service-api
   ports:
     - protocol: TCP
       port: 80

@@ -37,7 +37,7 @@ stages:
                 fi
               done
 
-              echo "=== Building and Deploying SilkRoad Travel API ==="
+              echo "=== Building and Deploying Travel API ==="
 
               echo "Authenticating to GCP..."
               echo "$(GCP_SA_KEY)" | base64 --decode > gcp-key.json

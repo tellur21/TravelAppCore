@@ -14,7 +14,7 @@ namespace TravelAppUI.Pages
             // It's better to get this from a specific section, e.g., "GoogleAuth:ClientId"
             GoogleClientId = configuration["GoogleAuth:ClientId"] ?? "";
             // Get the API base URL from configuration, with a fallback for production
-            ApiBaseUrl = configuration.GetValue<string>("ApiSettings:BaseUrl") ?? "https://api.SilkRoad.travel";
+            ApiBaseUrl = configuration.GetValue<string>("ApiSettings:BaseUrl") ?? "https://api..travel";
         }
 
         public void OnGet()

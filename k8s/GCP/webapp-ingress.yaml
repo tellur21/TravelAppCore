@@ -8,14 +8,14 @@ metadata:
   annotations:
     kubernetes.io/ingress.allow-http: "true"
     kubernetes.io/ingress.health-check-path: "/health"
-    kubernetes.io/ingress.global-static-ip-name: "bukhara-travel-ip"
-    networking.gke.io/managed-certificates: "bukhara-travel-ssl"
+    kubernetes.io/ingress.global-static-ip-name: "service-ip"
+    networking.gke.io/managed-certificates: "service-ssl"
     kubernetes.io/ingress.force-ssl-redirect: "true"
     kubernetes.io/ingress.class: "gce"
 spec:
   ingressClassName: gce
   rules:
-  - host: bukhara.travel
+  - host: host
     http:
       paths:
       - path: /
@@ -25,7 +25,7 @@ spec:
             name: webapp-service
             port:
               number: 80
-  - host: www.bukhara.travel
+  - host: www.host
     http:
       paths:
       - path: /

@@ -31,7 +31,7 @@ try
 
     // Configure API settings
     var apiSettings = builder.Configuration.GetSection("ApiSettings");
-    var baseUrl = apiSettings["BaseUrl"] ?? "https://api.SilkRoad.travel";
+    var baseUrl = apiSettings["BaseUrl"] ?? "https://api..travel";
 
     // Register HTTP clients
     builder.Services.AddHttpClient<ITravelPackageService, TravelPackageService>(client =>
@@ -66,12 +66,12 @@ try
 
     app.UseAuthorization();
 
-    // Redirect to www.SilkRoad.travel
+    // Redirect to www..travel
     app.Use(async (context, next) =>
     {
-        if (context.Request.Host.Host == "SilkRoad.travel")
+        if (context.Request.Host.Host == ".travel")
         {
-            var newUrl = $"https://www.SilkRoad.travel{context.Request.Path}{context.Request.QueryString}";
+            var newUrl = $"https://www..travel{context.Request.Path}{context.Request.QueryString}";
             Console.WriteLine($"Redirecting to: {newUrl}");
             context.Response.Redirect(newUrl, permanent: true);
             return;

@@ -56,7 +56,7 @@ spec:
                 
                 echo "Creating application user..."
                 cat > /tmp/init.sql <<'SQL'
-                USE [BukharaTravel];
+                USE [dbName];
                 
                 IF NOT EXISTS (SELECT * FROM sys.sql_logins WHERE name = 'APP_USER_PLACEHOLDER')
                   CREATE LOGIN APP_USER_PLACEHOLDER WITH PASSWORD = 'APP_PASS_PLACEHOLDER';
@@ -77,7 +77,7 @@ spec:
                 
                 echo "Database initialization completed successfully!"
           - name: migrate
-            image: europe-west6-docker.pkg.dev/propane-zephyr-468706-n7/bukhara-travel/api:latest
+            image: image/api:latest
             command: ["dotnet", "Api.dll", "--migrate-only"]
             envFrom:
             - configMapRef:
@@ -87,7 +87,7 @@ spec:
             imagePullPolicy: Always
       containers:
         - name: webapp
-          image: europe-west6-docker.pkg.dev/propane-zephyr-468706-n7/bukhara-travel/api:latest
+          image: image/api:latest
           envFrom:
             - configMapRef:
                 name: webapp-config
